@@ -1,10 +1,10 @@
 const util = require('util');
 const path = require('path');
 const fs = require('fs');
-_;
+const tv4 = require('tv4');
 
-_;
-_;
+const FILE_SCHEMA = require('../data/file-schema.json');
+const DATA_PATH = path.join(__dirname, '..', 'data', 'files-data.json');
 
 const readFile = util.promisify(fs.readFile)
 const writeFile = util.promisify(fs.writeFile)
@@ -12,8 +12,9 @@ const writeFile = util.promisify(fs.writeFile)
 const handlers = {
   readAll: async (req, res) => {
     try {
-      _;
-      _;
+      const filesDataString = await readFile(DATA_PATH, 'utf-8');
+      const filesData = JSON.parse(filesDataString);
+
 
       const fileNames = filesData.files
         .map(entry => ({
@@ -35,17 +36,18 @@ const handlers = {
     }
   },
   readOne: async (req, res) => {
-    const fileId = _;
+    const getId = Number(req.params.id);
 
     try {
       const filesDataString = await readFile(DATA_PATH, 'utf-8');
       const filesData = JSON.parse(filesDataString);
 
-      const entryWithId = filesData.files
-        .find(entry => _);
+      const fileWithId = filesData.files
+        .find(file => file.id === getId);
+         res.json(fileWithId);
 
-      if (entryWithId) {
-        _;
+      if (fileWithId) {
+        getId;
       } else {
         res.status(404).end();
       }
@@ -68,10 +70,10 @@ const handlers = {
       const filesDataString = await readFile(DATA_PATH, 'utf-8');
       const filesData = JSON.parse(filesDataString);
 
-      _;
-      _;
+      newFile.id = filesData.nextId;
+      filesData.nextId++;
 
-      const isValid = _;
+      const isValid = tv4.validate(newFile, FILE_SCHEMA);
 
       if (!isValid) {
         const error = tv4.error
@@ -90,7 +92,7 @@ const handlers = {
 
       const newFileDataString = JSON.stringify(filesData, null, '  ');
 
-      await _;
+      await writeFile(DATA_PATH, newFileDataString);
 
       res.json(newFile);
 
@@ -109,12 +111,12 @@ const handlers = {
   update: async (req, res) => {
     const idToUpdate = Number(req.params.id);
 
-    _;
-    _;
-    _;
+    const newFile = req.body
+    newFile.id = idToUpdate;
+    const isValid = tv4.validate(newFile, FILE_SCHEMA)
 
     if (!isValid) {
-      _;
+      const error = tv4.error;
       console.error(error)
 
       res.status(400).json({
@@ -134,12 +136,13 @@ const handlers = {
         .find(file => file.id === idToUpdate);
 
       if (entryToUpdate) {
-        _;
-        _;
+        const indexOfFile = filesData.files
+          .indexOf(entryToUpdate);
+        filesData.files[indexOfFile] = newFile;
 
-        _;
+        const newFileDataString = JSON.stringify(filesData, null, '  ');
 
-        _;
+        await writeFile(DATA_PATH, newFileDataString);
 
         res.json(newFile);
       } else {
@@ -158,7 +161,7 @@ const handlers = {
     }
   },
   delete: async (req, res) => {
-    const idToDelete = _;
+    const idToDelete = Number(req.params.id);
 
     try {
       const filesDataString = await readFile(DATA_PATH, 'utf-8');
@@ -167,9 +170,10 @@ const handlers = {
       const entryToDelete = filesData.files
         .find(file => file.id === idToDelete);
 
-      if (_) {
+      if (entryToDelete) {
 
-        _;
+        filesData.files = filesData.files
+        .filter(file => file.id !== entryToDelete.id);
 
         const newFileDataString = JSON.stringify(filesData, null, '  ');
 
